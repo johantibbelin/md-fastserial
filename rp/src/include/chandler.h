@@ -79,7 +79,19 @@
 // Index for the common shared variables
 #define CHANDLER_HARDWARE_TYPE 0
 #define CHANDLER_SVERSION 1
-#define CHANDLER_BUFFER_TYPE 2
+// Index 2: repurposed by this app as SERIAL_ST_BUFPTR (ST RAM buffer address)
+#define CHANDLER_SERIAL_ST_BUFPTR 2
+// Index 3: RP→ST ring buffer write pointer (RP writes, ST reads)
+#define CHANDLER_SERIAL_RX_WR_PTR 3
+
+// App-specific command codes (must not conflict with APP_TERMINAL_START=0
+// or APP_TERMINAL_KEYSTROKE/CMD_SET_SHARED_VAR=1 in term.h/sidecart_functions.s)
+#define APP_SERIAL_TX     2  // ST→RP: one byte (payload_size=6: token+char.w)
+#define APP_SERIAL_RX_ACK 3  // ST→RP: new read pointer (payload_size=8: token+ptr.l)
+
+// RP→ST ring buffer at APP_FREE (CHANDLER_APP_FREE_OFFSET)
+#define CHANDLER_SERIAL_RX_RING_SIZE   2048
+#define CHANDLER_SERIAL_RX_RING_OFFSET CHANDLER_APP_FREE_OFFSET
 
 // Maximum number of command callbacks that may be registered with
 // chandler_addCB. Pick a small bound so a buggy app cannot leak

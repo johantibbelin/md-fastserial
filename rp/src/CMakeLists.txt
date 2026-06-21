@@ -210,9 +210,12 @@ if (NOT _DEBUG)
         set(_DEBUG 1)
 endif()
 
-# Debug outputs
-pico_enable_stdio_usb(${PROJECT_NAME} 0)
-# Workaround to disable USB output in release builds
+# USB CDC is the FujiNet serial data path; always enabled.
+# In release builds (_DEBUG=0) no printf/DPRINTF is emitted so the
+# USB port carries binary protocol data only.  In debug builds DPRINTF
+# goes to UART; USB carries binary data + nothing else (stdio_usb is
+# initialised explicitly in emul.c, not via stdio_init_all).
+pico_enable_stdio_usb(${PROJECT_NAME} 1)
 if(${_DEBUG} STREQUAL "0")
     pico_enable_stdio_uart(${PROJECT_NAME} 0)
 else()
