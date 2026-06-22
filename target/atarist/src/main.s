@@ -340,6 +340,7 @@ rom_function:
 
 ; Shared functions included at the end of the file
 ; Don't forget to include the macros for the shared functions at the top of file
+    xdef send_sync_command_to_sidecart
     include "inc/sidecart_functions.s"
 
 

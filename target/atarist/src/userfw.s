@@ -35,10 +35,26 @@
 ;   $FA201C = SHARED_VARIABLES[3] = RP→ST ring buffer write pointer (RP writes)
 ;   $FA2300 = APP_FREE             = RP→ST ring buffer (2048 bytes)
 
-    include "inc/sidecart_macros.s"   ; send_sync / send_write_sync macros
-
     ; send_sync_command_to_sidecart is defined in main.o (sidecart_functions.s)
     xref send_sync_command_to_sidecart
+
+; Local send_sync macro using JSR (32-bit absolute) instead of BSR (16-bit
+; PC-relative).  Cross-object AOUT rawbin1 symbols are resolved as absolute
+; addresses by vlink, which overflows a 16-bit BSR relocation field; JSR
+; with an absolute long address accepts the full 32-bit value.
+send_sync   macro
+                    move.w  #CMD_RETRIES_COUNT, d7
+.\@retry:
+                    movem.l d1-d7, -(sp)
+                    moveq.l #\2, d1
+                    move.w  #\1, d0
+                    jsr     send_sync_command_to_sidecart
+                    movem.l (sp)+, d1-d7
+                    tst.w   d0
+                    beq.s   .\@ok
+                    dbf     d7, .\@retry
+.\@ok:
+                    endm
 
     section text
 
@@ -138,9 +154,9 @@ serial_bios_hook:
     cmp.w   #BIOS_BCONIN, d0
     beq.s   .bconin
     cmp.w   #BIOS_BCONOUT, d0
-    beq.s   .bconout
+    beq     .bconout
     cmp.w   #BIOS_BCOSTAT, d0
-    beq.s   .bcostat
+    beq     .bcostat
 
 .passthrough:
     ; Not a function we handle — forward to the original BIOS handler.
@@ -204,7 +220,7 @@ serial_bios_hook:
 .bconout:
     move.w  2(a0), d1
     cmp.w   #SERIAL_DEVICE, d1
-    bne.s   .passthrough
+    bne     .passthrough
     ; char is at USP+4 (a word; the byte is in the low half)
     move.w  4(a0), d3               ; d3.w = char (low byte is the character)
     send_sync APP_SERIAL_TX, 2      ; 2-byte payload → D3.w
@@ -214,6 +230,6 @@ serial_bios_hook:
 .bcostat:
     move.w  2(a0), d1
     cmp.w   #SERIAL_DEVICE, d1
-    bne.s   .passthrough
+    bne     .passthrough
     moveq   #-1, d0                 ; always ready to accept output
     rte
