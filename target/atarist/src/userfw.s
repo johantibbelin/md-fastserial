@@ -56,8 +56,6 @@ send_sync   macro
 .\@ok:
                     endm
 
-    section text
-
 ; ---------------------------------------------------------------------------
 ; Constants (re-declared here because equ values don't cross object files)
 ; ---------------------------------------------------------------------------
@@ -98,6 +96,14 @@ BIOS_BCOSTAT            equ 8
 
 ; AUX: device number
 SERIAL_DEVICE           equ 1
+
+    section text
+
+; Without an ORG, VASM assigns labels image-relative addresses ($000800+),
+; so move.l #serial_bios_hook would install $000850 instead of $FA0850.
+; ORG sets the PC base to match the runtime ROM address, just as main.s
+; uses `org ROM4_ADDR` before its own code.
+    org (ROM4_ADDR + $800)
 
 ; ---------------------------------------------------------------------------
 ; userfw — entry point, installs the BIOS hook then returns to TOS
